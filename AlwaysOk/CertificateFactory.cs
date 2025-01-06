@@ -9,6 +9,7 @@ namespace AlwaysOk;
 
 public static class CertificateFactory
 {
+    // Modify the following constants to match your setup.
     private const string _caPassword = "123qaz!@#QAZ";
     private const string _defaultHost = "localhost";
     private const string _country = "AU";
@@ -61,7 +62,7 @@ public static class CertificateFactory
         request.CertificateExtensions.Add(
             new X509SubjectKeyIdentifierExtension(request.PublicKey, false));
 
-        request.CertificateExtensions.Add(GetSanDetails());
+        request.CertificateExtensions.Add(GetSanDetails(host));
 
         var notBefore = DateTimeOffset.UtcNow.AddDays(-5);
         var notAfter = notBefore.AddYears(1);
@@ -95,18 +96,15 @@ public static class CertificateFactory
         return _ca;
     }
 
-    private static X509Extension GetSanDetails()
+    private static X509Extension GetSanDetails(string host)
     {
         var sanBuilder = new SubjectAlternativeNameBuilder();
-        sanBuilder.AddDnsName("localhost");
+        sanBuilder.AddDnsName(host);
         sanBuilder.AddIpAddress(IPAddress.Parse("127.0.0.1"));
 
         foreach (var ipAddress in Dns.GetHostAddresses(Dns.GetHostName()))
         {
-            if (ipAddress.AddressFamily is AddressFamily.InterNetwork or AddressFamily.InterNetworkV6)
-            {
-                sanBuilder.AddIpAddress(ipAddress);
-            }
+            sanBuilder.AddIpAddress(ipAddress);
         }
 
         return sanBuilder.Build();
@@ -115,7 +113,7 @@ public static class CertificateFactory
     private static X509Certificate2 StoreCertificate(byte[] pfxData)
     {
         var certificate = X509CertificateLoader.LoadPkcs12(pfxData, "", X509KeyStorageFlags.Exportable | X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
-        using var store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+        using var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
         store.Open(OpenFlags.ReadWrite);
 
         var certificateExists = false;
