@@ -20,8 +20,14 @@ public class AnyController : ControllerBase
     [HttpOptions]
     public async Task<ActionResult> Action()
     {
-        using var reader = new StreamReader(Request.Body);
-        var body = await reader.ReadToEndAsync();
+        var body = string.Empty;
+        try
+        {
+            using var reader = new StreamReader(Request.Body);
+            body = await reader.ReadToEndAsync();
+        }
+        catch
+        { }
 
         _logger.LogInformation("""
             Incoming Request
@@ -36,6 +42,6 @@ public class AnyController : ControllerBase
             JsonSerializer.Serialize(Request.Headers),
             string.IsNullOrEmpty(body) ? "n/a" : body);
 
-        return Ok();
+        return Ok("AlwaysOk");
     }
 }
